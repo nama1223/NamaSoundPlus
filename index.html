@@ -560,14 +560,25 @@ function resetIframeScale(ifr) {
   ifr.style.left = '';
   ifr.style.top = '';
 }
-// NamaMeto の data-theme → 背景色マッピング
-const NAMAMETO_THEME_BG = {
-  'beige':   '#dccaaf',
-  'dark':    '#121212',
-  'light':   '#f5f3cd',
-  'darkred': '#2b0f0f',
-  'navy':    '#0d1b35',
-  'green':   '#daeeda'
+// アプリ別 data-theme → 背景色マッピング
+// meto: <body data-theme="xxx">
+// chu:  <html data-theme="xxx">
+const THEME_BG = {
+  meto: {
+    'beige':   '#dccaaf',
+    'dark':    '#121212',
+    'light':   '#f5f3cd',
+    'darkred': '#2b0f0f',
+    'navy':    '#0d1b35',
+    'green':   '#daeeda'
+  },
+  chu: {
+    'default': '#dccaaf',
+    'dark':    '#2c2c2c',
+    'light':   '#f5f3cd',
+    'darkred': '#3d1a1a',
+    'navy':    '#1a2d4a'
+  }
 };
 
 // ===========================
@@ -581,15 +592,22 @@ function observeIframeTheme(ifr) {
   try {
     const doc = ifr.contentDocument;
     if (!doc) return;
+    const app = ifr.dataset.app;
     const syncBg = () => {
       try {
         let bg = null;
-        // NamaMeto: body の data-theme 属性から直接マッピング
-        const theme = doc.body.getAttribute('data-theme');
-        if (theme && NAMAMETO_THEME_BG[theme]) {
-          bg = NAMAMETO_THEME_BG[theme];
-        } else {
-          // NamaChu / NamaHam: getComputedStyle フォールバック
+        const map = THEME_BG[app];
+        if (app === 'meto' && map) {
+          // NamaMeto: <body data-theme="xxx">
+          const theme = doc.body.getAttribute('data-theme');
+          if (theme && map[theme]) bg = map[theme];
+        } else if (app === 'chu' && map) {
+          // NamaChu: <html data-theme="xxx">
+          const theme = doc.documentElement.getAttribute('data-theme');
+          if (theme && map[theme]) bg = map[theme];
+        }
+        if (!bg) {
+          // NamaHam 等: getComputedStyle フォールバック
           const htmlBg = getComputedStyle(doc.documentElement).backgroundColor;
           const bodyBg = getComputedStyle(doc.body).backgroundColor;
           bg = (htmlBg && htmlBg !== 'rgba(0, 0, 0, 0)') ? htmlBg : bodyBg;
