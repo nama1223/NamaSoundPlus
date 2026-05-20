@@ -502,16 +502,25 @@ function autoScaleIframe(ifr) {
     const wrap = ifr.parentElement;
     const realW = wrap.clientWidth;
     const realH = wrap.clientHeight;
-    const scale = realW / designW;
+    // タブレット等、横幅がデザイン幅より広い場合は等倍(1.0)上限でセンタリング
+    const scale = Math.min(realW / designW, 1.0);
+    const offsetX = (realW - designW * scale) / 2;
+    ifr.style.position = 'absolute';
+    ifr.style.left = '0';
+    ifr.style.top = '0';
     ifr.style.width  = designW + 'px';
     ifr.style.height = (realH / scale) + 'px';
-    ifr.style.transform = `scale(${scale})`;
+    ifr.style.transformOrigin = 'top left';
+    ifr.style.transform = `translateX(${offsetX}px) scale(${scale})`;
   } catch(e) { /* cross-origin等 */ }
 }
 function resetIframeScale(ifr) {
   ifr.style.width = '';
   ifr.style.height = '';
   ifr.style.transform = '';
+  ifr.style.position = '';
+  ifr.style.left = '';
+  ifr.style.top = '';
 }
 function rescaleAllIframes() {
   document.querySelectorAll('iframe.app-frame').forEach(ifr => {
