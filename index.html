@@ -507,9 +507,13 @@ function attachIframeLoadHooks() {
       postToFrame(ifr, { type: 'setLanguage', lang: state.lang });
       postToFrame(ifr, { type: 'setWakeLock', enabled: state.wake });
       autoScaleIframe(ifr);
+      observeIframeTheme(ifr);  // テーマ変更をリアルタイム検知
     });
   });
 }
+
+// スケール値を保持（デッドゾーンスクロール計算に使用）
+const iframeScales = new WeakMap();
 
 // ===========================
 // 固定幅設計の子アプリを自動スケール
@@ -545,6 +549,7 @@ function autoScaleIframe(ifr) {
     ifr.style.height = (realH / scale) + 'px';
     ifr.style.transformOrigin = 'top left';
     ifr.style.transform = `translateX(${offsetX}px) scale(${scale})`;
+    iframeScales.set(ifr, scale);
   } catch(e) { /* cross-origin等 */ }
 }
 function resetIframeScale(ifr) {
@@ -555,6 +560,47 @@ function resetIframeScale(ifr) {
   ifr.style.left = '';
   ifr.style.top = '';
 }
+// ===========================
+// テーマ変更をリアルタイム検知して背景色を同期
+// ===========================
+function observeIframeTheme(ifr) {
+  try {
+    const doc = ifr.contentDocument;
+    if (!doc) return;
+    const syncBg = () => {
+      try {
+        const bg = getComputedStyle(doc.body).backgroundColor;
+        if (bg && bg !== 'rgba(0, 0, 0, 0)') ifr.parentElement.style.background = bg;
+      } catch(e2) {}
+    };
+    const observer = new MutationObserver(syncBg);
+    // body/htmlのstyle・class変更を監視
+    observer.observe(doc.body, { attributes: true, attributeFilter: ['style', 'class'] });
+    observer.observe(doc.documentElement, { attributes: true, attributeFilter: ['style', 'class'] });
+  } catch(e) {}
+}
+
+// ===========================
+// iframe外の余白エリアからのスクロールを iframe 内に転送
+// ===========================
+function addDeadZoneScrollBridge(wrap, ifr) {
+  let _startY = null;
+  wrap.addEventListener('touchstart', (e) => {
+    if (e.target === wrap) _startY = e.touches[0].clientY;
+  }, { passive: true });
+  wrap.addEventListener('touchmove', (e) => {
+    if (e.target !== wrap || _startY === null) return;
+    const dy = _startY - e.touches[0].clientY;
+    _startY = e.touches[0].clientY;
+    try {
+      const scale = iframeScales.get(ifr) || 1.0;
+      ifr.contentWindow.scrollBy({ top: dy / scale, behavior: 'instant' });
+    } catch(e2) {}
+  }, { passive: true });
+  wrap.addEventListener('touchend',   () => { _startY = null; });
+  wrap.addEventListener('touchcancel', () => { _startY = null; });
+}
+
 function rescaleAllIframes() {
   document.querySelectorAll('iframe.app-frame').forEach(ifr => {
     if (ifr.src) autoScaleIframe(ifr);
@@ -631,6 +677,11 @@ function init() {
   slider.value = Math.round(state.appScale * 100);
   document.getElementById('scaleValue').textContent = `×${state.appScale.toFixed(1)}`;
   attachIframeLoadHooks();
+  // 余白エリアのタッチをiframe内スクロールに橋渡し
+  document.querySelectorAll('.frame-wrap').forEach(wrap => {
+    const ifr = wrap.querySelector('iframe.app-frame');
+    if (ifr) addDeadZoneScrollBridge(wrap, ifr);
+  });
   switchTab(state.currentTab);
   if (state.wake) applyParentWakeLock(true);
 
