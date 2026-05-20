@@ -4,9 +4,10 @@
 
 const CACHE_NAME = 'namasoundplus-cache-auto';
 
+// index.html は pre-cache しない。
+// install 時に CDN キャッシュ遅延で古い版を焼き付けるリスクを避けるため。
+// index.html は fetch ハンドラのネットワークファーストで初回アクセス時にキャッシュされる。
 const urlsToCache = [
-  './',
-  './index.html',
   './manifest.json',
   './NamaSoundPlus192.png',
   './NamaSoundPlus512.png',
