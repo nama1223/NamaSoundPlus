@@ -86,6 +86,7 @@
     border: 0;
     display: block;
     background: #fff;
+    transform-origin: top left;
   }
 
   /* 設定パネル */
@@ -293,6 +294,8 @@ function switchTab(tab) {
     if (wrap) {
       const ifr = wrap.querySelector('iframe');
       if (ifr && !ifr.src && ifr.dataset.src) ifr.src = ifr.dataset.src;
+      // タブ表示後にサイズ確定するため再スケール
+      if (ifr && ifr.src) requestAnimationFrame(() => autoScaleIframe(ifr));
     }
 
     // 切替時に他アプリの音を止める
@@ -345,9 +348,47 @@ function attachIframeLoadHooks() {
     ifr.addEventListener('load', () => {
       postToFrame(ifr, { type: 'setLanguage', lang: state.lang });
       postToFrame(ifr, { type: 'setWakeLock', enabled: state.wake });
+      autoScaleIframe(ifr);
     });
   });
 }
+
+// ===========================
+// 固定幅設計の子アプリを自動スケール
+// <meta name="viewport" content="width=450"> のような固定幅指定を読み取り、
+// iframe をデザイン幅で描画して transform:scale で実寸に合わせる。
+// width=device-width の場合は何もしない（等倍）。
+// ===========================
+function autoScaleIframe(ifr) {
+  try {
+    const doc = ifr.contentDocument;
+    if (!doc) return;
+    const vp = doc.querySelector('meta[name="viewport"]');
+    if (!vp) { resetIframeScale(ifr); return; }
+    const m = (vp.getAttribute('content') || '').match(/width\s*=\s*(\d+)/);
+    if (!m) { resetIframeScale(ifr); return; }
+    const designW = parseInt(m[1], 10);
+    const wrap = ifr.parentElement;
+    const realW = wrap.clientWidth;
+    const realH = wrap.clientHeight;
+    const scale = realW / designW;
+    ifr.style.width  = designW + 'px';
+    ifr.style.height = (realH / scale) + 'px';
+    ifr.style.transform = `scale(${scale})`;
+  } catch(e) { /* cross-origin等 */ }
+}
+function resetIframeScale(ifr) {
+  ifr.style.width = '';
+  ifr.style.height = '';
+  ifr.style.transform = '';
+}
+function rescaleAllIframes() {
+  document.querySelectorAll('iframe.app-frame').forEach(ifr => {
+    if (ifr.src) autoScaleIframe(ifr);
+  });
+}
+window.addEventListener('resize', rescaleAllIframes);
+window.addEventListener('orientationchange', () => setTimeout(rescaleAllIframes, 200));
 
 // ===========================
 // 親側 WakeLock（任意・子側がやってくれるが念のため親でも保持）
