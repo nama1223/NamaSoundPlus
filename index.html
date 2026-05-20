@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>NamaSound+</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./NamaSoundPlus192.png">
+<link rel="apple-touch-icon" href="./NamaSoundPlus192.png">
+<style>
+  :root {
+    --tabbar-h: 44px;
+    --bg: #000;
+    --fg: #fff;
+    --accent: #BAEA1C;
+    --muted: #888;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  body {
+    display: flex; flex-direction: column;
+    height: 100vh; height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* タブバー */
+  #tabbar {
+    flex: 0 0 auto;
+    height: var(--tabbar-h);
+    display: flex;
+    align-items: stretch;
+    background: #000;
+    border-bottom: 1px solid #222;
+  }
+  .tab-btn {
+    flex: 1 1 0;
+    background: #000;
+    color: #fff;
+    border: none;
+    border-right: 1px solid #222;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.15s, color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab-btn:last-of-type { border-right: none; }
+  .tab-btn.active {
+    background: var(--accent);
+    color: #000;
+    font-weight: bold;
+  }
+  .tab-btn.gear {
+    flex: 0 0 44px;
+    font-size: 1.1rem;
+  }
+  .tab-btn.gear.active { background: #444; color: #fff; }
+
+  /* iframe コンテナ */
+  #frames {
+    flex: 1 1 auto;
+    position: relative;
+    background: #000;
+    overflow: hidden;
+  }
+  .frame-wrap {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    border: 0;
+    display: none;
+  }
+  .frame-wrap.active { display: block; }
+  iframe.app-frame {
+    width: 100%; height: 100%;
+    border: 0;
+    background: #fff;
+  }
+
+  /* 設定パネル */
+  #settingsPanel {
+    position: absolute; inset: 0;
+    background: #111;
+    color: #fff;
+    padding: 16px;
+    overflow-y: auto;
+    display: none;
+  }
+  #settingsPanel.active { display: block; }
+  #settingsPanel h2 {
+    margin: 0 0 16px;
+    font-size: 1.1rem;
+    border-bottom: 1px solid #333;
+    padding-bottom: 8px;
+  }
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px;
+    background: #1c1c1c;
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+  .setting-row .label {
+    display: flex; flex-direction: column;
+  }
+  .setting-row .label .title { font-weight: bold; font-size: 0.95rem; }
+  .setting-row .label .desc { font-size: 0.75rem; opacity: 0.65; margin-top: 2px; }
+
+  /* スイッチ */
+  .switch { position: relative; display: inline-block; width: 48px; height: 26px; }
+  .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: #555; border-radius: 26px; transition: 0.2s;
+  }
+  .slider::before {
+    content: ""; position: absolute;
+    height: 20px; width: 20px; left: 3px; top: 3px;
+    background: #fff; border-radius: 50%; transition: 0.2s;
+  }
+  .switch input:checked + .slider { background: var(--accent); }
+  .switch input:checked + .slider::before { transform: translateX(22px); }
+
+  /* セグメント */
+  .seg {
+    display: inline-flex;
+    border: 1px solid #444; border-radius: 8px; overflow: hidden;
+  }
+  .seg button {
+    background: #1c1c1c; color: #fff; border: none;
+    padding: 6px 12px; cursor: pointer; font-size: 0.85rem;
+  }
+  .seg button.on { background: var(--accent); color: #000; font-weight: bold; }
+
+  .footer-note {
+    font-size: 0.7rem; opacity: 0.5; margin-top: 16px; text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div id="tabbar">
+  <button class="tab-btn gear" id="btnSettings" data-tab="settings" aria-label="settings">⚙️</button>
+  <button class="tab-btn active" data-tab="meto"  data-i18n="meto">メトロノーム</button>
+  <button class="tab-btn"        data-tab="chu"   data-i18n="chu">チューナー</button>
+  <button class="tab-btn"        data-tab="ham"   data-i18n="ham">ハーモニー</button>
+</div>
+
+<div id="frames">
+  <!-- 各子アプリ。loading="lazy" でタブ切替まで読み込まない -->
+  <div class="frame-wrap active" data-frame="meto">
+    <iframe class="app-frame" data-app="meto"
+      src="https://nama1223.github.io/NamaMeto/NamaMeto.html"
+      allow="microphone; autoplay; clipboard-read; clipboard-write"
+      allowfullscreen></iframe>
+  </div>
+  <div class="frame-wrap" data-frame="chu">
+    <iframe class="app-frame" data-app="chu"
+      data-src="https://nama1223.github.io/Namachu/"
+      allow="microphone; autoplay"
+      allowfullscreen></iframe>
+  </div>
+  <div class="frame-wrap" data-frame="ham">
+    <iframe class="app-frame" data-app="ham"
+      data-src="https://nama1223.github.io/NamaHam/"
+      allow="microphone; autoplay"
+      allowfullscreen></iframe>
+  </div>
+
+  <!-- 設定パネル -->
+  <div id="settingsPanel">
+    <h2 data-i18n="settings_title">⚙️ 設定</h2>
+
+    <div class="setting-row">
+      <div class="label">
+        <div class="title" data-i18n="lang_title">🌐 言語 / Language</div>
+        <div class="desc" data-i18n="lang_desc">3アプリ一括で切り替え</div>
+      </div>
+      <div class="seg" id="segLang">
+        <button data-lang="ja" class="on">日本語</button>
+        <button data-lang="en">English</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="label">
+        <div class="title"><span id="wakeLockEmoji">😴</span> <span data-i18n="wake_title">スリープ防止</span></div>
+        <div class="desc" id="wakeLockStatus" data-i18n="wake_desc">3アプリ一括（画面オン維持）</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="wakeLockToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <div class="label">
+        <div class="title" data-i18n="silence_title">🔇 切替時に音を止める</div>
+        <div class="desc" data-i18n="silence_desc">タブを切り替えたとき再生中の音を停止</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="silenceToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="footer-note">NamaSound+ © nama1223</div>
+  </div>
+</div>
+
+<script>
+// ===========================
+// 設定・状態
+// ===========================
+const LS = {
+  lang: 'nsp_lang',
+  wake: 'nsp_wakelock',
+  silence: 'nsp_silence_on_switch',
+  lastTab: 'nsp_last_tab'
+};
+
+const CHILD_ORIGIN = 'https://nama1223.github.io';
+
+const I18N = {
+  ja: {
+    meto: 'メトロノーム', chu: 'チューナー', ham: 'ハーモニー',
+    settings_title: '⚙️ 設定',
+    lang_title: '🌐 言語 / Language', lang_desc: '3アプリ一括で切り替え',
+    wake_title: 'スリープ防止', wake_desc: '3アプリ一括（画面オン維持）',
+    silence_title: '🔇 切替時に音を止める', silence_desc: 'タブを切り替えたとき再生中の音を停止'
+  },
+  en: {
+    meto: 'Metronome', chu: 'Tuner', ham: 'Harmony',
+    settings_title: '⚙️ Settings',
+    lang_title: '🌐 Language', lang_desc: 'Sync across all 3 apps',
+    wake_title: 'Keep Awake', wake_desc: 'Sync across all 3 apps',
+    silence_title: '🔇 Mute on tab switch', silence_desc: 'Stop playback when switching tabs'
+  }
+};
+
+let state = {
+  lang: localStorage.getItem(LS.lang) || (navigator.language.startsWith('ja') ? 'ja' : 'en'),
+  wake: localStorage.getItem(LS.wake) === 'true',
+  silence: localStorage.getItem(LS.silence) !== 'false',  // 既定 true
+  currentTab: localStorage.getItem(LS.lastTab) || 'meto'
+};
+
+// ===========================
+// i18n
+// ===========================
+function applyI18n() {
+  const t = I18N[state.lang] || I18N.ja;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key]) el.textContent = t[key];
+  });
+  document.documentElement.lang = state.lang;
+  // セグメント表示
+  document.querySelectorAll('#segLang button').forEach(b => {
+    b.classList.toggle('on', b.dataset.lang === state.lang);
+  });
+}
+
+// ===========================
+// タブ切替
+// ===========================
+function switchTab(tab) {
+  // 設定パネル
+  document.getElementById('settingsPanel').classList.toggle('active', tab === 'settings');
+
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+
+  document.querySelectorAll('.frame-wrap').forEach(f => {
+    f.classList.toggle('active', f.dataset.frame === tab);
+  });
+
+  if (tab !== 'settings') {
+    // 遅延ロード（data-src を src へ）
+    const wrap = document.querySelector(`.frame-wrap[data-frame="${tab}"]`);
+    if (wrap) {
+      const ifr = wrap.querySelector('iframe');
+      if (ifr && !ifr.src && ifr.dataset.src) ifr.src = ifr.dataset.src;
+    }
+
+    // 切替時に他アプリの音を止める
+    if (state.silence) {
+      document.querySelectorAll('iframe.app-frame').forEach(ifr => {
+        if (ifr.dataset.app !== tab) {
+          postToFrame(ifr, { type: 'pauseAll' });
+        }
+      });
+    }
+
+    state.currentTab = tab;
+    localStorage.setItem(LS.lastTab, tab);
+  }
+}
+
+// ===========================
+// 子アプリへの postMessage
+// ===========================
+function postToFrame(ifr, msg) {
+  try {
+    if (ifr && ifr.contentWindow) {
+      ifr.contentWindow.postMessage(msg, CHILD_ORIGIN);
+    }
+  } catch(e) { /* noop */ }
+}
+function broadcast(msg) {
+  document.querySelectorAll('iframe.app-frame').forEach(ifr => postToFrame(ifr, msg));
+}
+
+// 子が読み込まれた直後にも現在の設定を再送する
+window.addEventListener('message', (event) => {
+  if (event.origin !== CHILD_ORIGIN) return;
+  const data = event.data;
+  if (!data || typeof data !== 'object') return;
+  if (data.type === 'childReady') {
+    // 受け取った子に向けて初期状態を流し込む
+    const ifr = [...document.querySelectorAll('iframe.app-frame')]
+      .find(i => i.contentWindow === event.source);
+    if (ifr) {
+      postToFrame(ifr, { type: 'setLanguage', lang: state.lang });
+      postToFrame(ifr, { type: 'setWakeLock', enabled: state.wake });
+    }
+  }
+});
+
+// iframe の load 時にもフォールバックで送る（childReady未対応の旧版用）
+function attachIframeLoadHooks() {
+  document.querySelectorAll('iframe.app-frame').forEach(ifr => {
+    ifr.addEventListener('load', () => {
+      postToFrame(ifr, { type: 'setLanguage', lang: state.lang });
+      postToFrame(ifr, { type: 'setWakeLock', enabled: state.wake });
+    });
+  });
+}
+
+// ===========================
+// 親側 WakeLock（任意・子側がやってくれるが念のため親でも保持）
+// ===========================
+let _parentWakeLock = null;
+async function applyParentWakeLock(on) {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    if (on && !_parentWakeLock) {
+      _parentWakeLock = await navigator.wakeLock.request('screen');
+      _parentWakeLock.addEventListener('release', () => { _parentWakeLock = null; });
+    } else if (!on && _parentWakeLock) {
+      await _parentWakeLock.release();
+      _parentWakeLock = null;
+    }
+  } catch(e) { /* noop */ }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && state.wake) applyParentWakeLock(true);
+});
+
+// ===========================
+// イベントバインド
+// ===========================
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => switchTab(b.dataset.tab));
+});
+
+document.getElementById('segLang').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-lang]');
+  if (!btn) return;
+  state.lang = btn.dataset.lang;
+  localStorage.setItem(LS.lang, state.lang);
+  applyI18n();
+  broadcast({ type: 'setLanguage', lang: state.lang });
+});
+
+document.getElementById('wakeLockToggle').addEventListener('change', (e) => {
+  state.wake = e.target.checked;
+  localStorage.setItem(LS.wake, state.wake ? 'true' : 'false');
+  document.getElementById('wakeLockEmoji').textContent = state.wake ? '🥺' : '😴';
+  applyParentWakeLock(state.wake);
+  broadcast({ type: 'setWakeLock', enabled: state.wake });
+});
+
+document.getElementById('silenceToggle').addEventListener('change', (e) => {
+  state.silence = e.target.checked;
+  localStorage.setItem(LS.silence, state.silence ? 'true' : 'false');
+});
+
+// ===========================
+// 初期化
+// ===========================
+function init() {
+  applyI18n();
+  document.getElementById('wakeLockToggle').checked = state.wake;
+  document.getElementById('wakeLockEmoji').textContent = state.wake ? '🥺' : '😴';
+  document.getElementById('silenceToggle').checked = state.silence;
+  attachIframeLoadHooks();
+  switchTab(state.currentTab);
+  if (state.wake) applyParentWakeLock(true);
+
+  // Service Worker 登録
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
