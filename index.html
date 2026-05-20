@@ -560,6 +560,16 @@ function resetIframeScale(ifr) {
   ifr.style.left = '';
   ifr.style.top = '';
 }
+// NamaMeto の data-theme → 背景色マッピング
+const NAMAMETO_THEME_BG = {
+  'beige':   '#dccaaf',
+  'dark':    '#121212',
+  'light':   '#f5f3cd',
+  'darkred': '#2b0f0f',
+  'navy':    '#0d1b35',
+  'green':   '#daeeda'
+};
+
 // ===========================
 // テーマ変更をリアルタイム検知して背景色を同期
 // MutationObserver（即時）+ setInterval（取りこぼし補完）の二刀流
@@ -573,19 +583,32 @@ function observeIframeTheme(ifr) {
     if (!doc) return;
     const syncBg = () => {
       try {
-        // html要素を優先、透明なら body にフォールバック
-        const htmlBg = getComputedStyle(doc.documentElement).backgroundColor;
-        const bodyBg = getComputedStyle(doc.body).backgroundColor;
-        const bg = (htmlBg && htmlBg !== 'rgba(0, 0, 0, 0)') ? htmlBg : bodyBg;
+        let bg = null;
+        // NamaMeto: body の data-theme 属性から直接マッピング
+        const theme = doc.body.getAttribute('data-theme');
+        if (theme && NAMAMETO_THEME_BG[theme]) {
+          bg = NAMAMETO_THEME_BG[theme];
+        } else {
+          // NamaChu / NamaHam: getComputedStyle フォールバック
+          const htmlBg = getComputedStyle(doc.documentElement).backgroundColor;
+          const bodyBg = getComputedStyle(doc.body).backgroundColor;
+          bg = (htmlBg && htmlBg !== 'rgba(0, 0, 0, 0)') ? htmlBg : bodyBg;
+        }
         if (bg && bg !== 'rgba(0, 0, 0, 0)') ifr.parentElement.style.background = bg;
       } catch(e2) {}
     };
-    // MutationObserver: style/class/data属性の変化を即検知
+    // MutationObserver: data-theme / style / class の変化を即検知
     const observer = new MutationObserver(syncBg);
-    observer.observe(doc.documentElement, { attributes: true });
-    observer.observe(doc.body,            { attributes: true });
+    observer.observe(doc.body, {
+      attributes: true,
+      attributeFilter: ['data-theme', 'style', 'class']
+    });
+    observer.observe(doc.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme', 'style', 'class']
+    });
     ifr._themeObserver = observer;
-    // ポーリング: CSS変数setPropertyなど取りこぼし補完（1.5秒ごと）
+    // ポーリング: 取りこぼし補完（1.5秒ごと）
     ifr._themeInterval = setInterval(syncBg, 1500);
   } catch(e) {}
 }
