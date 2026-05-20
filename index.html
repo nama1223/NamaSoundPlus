@@ -562,21 +562,31 @@ function resetIframeScale(ifr) {
 }
 // ===========================
 // テーマ変更をリアルタイム検知して背景色を同期
+// MutationObserver（即時）+ setInterval（取りこぼし補完）の二刀流
 // ===========================
 function observeIframeTheme(ifr) {
+  // 前回のObserver/Intervalをクリア（再ロード時の重複防止）
+  if (ifr._themeObserver) { ifr._themeObserver.disconnect(); ifr._themeObserver = null; }
+  if (ifr._themeInterval) { clearInterval(ifr._themeInterval); ifr._themeInterval = null; }
   try {
     const doc = ifr.contentDocument;
     if (!doc) return;
     const syncBg = () => {
       try {
-        const bg = getComputedStyle(doc.body).backgroundColor;
+        // html要素を優先、透明なら body にフォールバック
+        const htmlBg = getComputedStyle(doc.documentElement).backgroundColor;
+        const bodyBg = getComputedStyle(doc.body).backgroundColor;
+        const bg = (htmlBg && htmlBg !== 'rgba(0, 0, 0, 0)') ? htmlBg : bodyBg;
         if (bg && bg !== 'rgba(0, 0, 0, 0)') ifr.parentElement.style.background = bg;
       } catch(e2) {}
     };
+    // MutationObserver: style/class/data属性の変化を即検知
     const observer = new MutationObserver(syncBg);
-    // body/htmlのstyle・class変更を監視
-    observer.observe(doc.body, { attributes: true, attributeFilter: ['style', 'class'] });
-    observer.observe(doc.documentElement, { attributes: true, attributeFilter: ['style', 'class'] });
+    observer.observe(doc.documentElement, { attributes: true });
+    observer.observe(doc.body,            { attributes: true });
+    ifr._themeObserver = observer;
+    // ポーリング: CSS変数setPropertyなど取りこぼし補完（1.5秒ごと）
+    ifr._themeInterval = setInterval(syncBg, 1500);
   } catch(e) {}
 }
 
