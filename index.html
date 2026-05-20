@@ -169,6 +169,17 @@
   .footer-note {
     font-size: 0.7rem; opacity: 0.5; margin-top: 16px; text-align: center;
   }
+  /* スケールスライダー */
+  #scaleSlider {
+    width: 90px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  #scaleValue {
+    font-size: 0.85rem; font-weight: bold;
+    min-width: 3.2em; text-align: right;
+  }
+
   .wishlist-row {
     display: flex; align-items: center; gap: 10px;
     margin-top: 52px; padding: 4px 2px;
@@ -251,6 +262,18 @@
       </label>
     </div>
 
+    <!-- 表示サイズ -->
+    <div class="setting-row">
+      <div class="label">
+        <div class="title" data-i18n="scale_title">📐 表示サイズ</div>
+        <div class="desc" data-i18n="scale_desc">固定幅アプリ（メトロノーム・チューナー）のみ</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <input type="range" id="scaleSlider" min="50" max="200" step="5" value="100">
+        <span id="scaleValue">×1.0</span>
+      </div>
+    </div>
+
     <!-- 強制リロード -->
     <div class="setting-row">
       <div class="label">
@@ -297,7 +320,8 @@ const LS = {
   lang: 'nsp_lang',
   wake: 'nsp_wakelock',
   silence: 'nsp_silence_on_switch',
-  lastTab: 'nsp_last_tab'
+  lastTab: 'nsp_last_tab',
+  appScale: 'nsp_app_scale'
 };
 
 const CHILD_ORIGIN = 'https://nama1223.github.io';
@@ -314,7 +338,8 @@ const I18N = {
     copy: 'URLコピー', copied: 'コピー済み',
     wishlist: '欲しいものリスト',
     reload_title: '🔄 強制リロード', reload_desc: 'キャッシュを消去してアプリを最新化',
-    reload_btn: 'リロード', reloading_btn: '処理中...'
+    reload_btn: 'リロード', reloading_btn: '処理中...',
+    scale_title: '📐 表示サイズ', scale_desc: '固定幅アプリ（メトロノーム・チューナー）のみ'
   },
   en: {
     meto: 'Metronome', chu: 'Tuner', ham: 'Harmony',
@@ -327,7 +352,8 @@ const I18N = {
     copy: 'Copy URL', copied: 'Copied!',
     wishlist: 'Wish List',
     reload_title: '🔄 Force Reload', reload_desc: 'Clear cache and update to latest',
-    reload_btn: 'Reload', reloading_btn: 'Working...'
+    reload_btn: 'Reload', reloading_btn: 'Working...',
+    scale_title: '📐 Display Size', scale_desc: 'Fixed-width apps (Metronome & Tuner) only'
   }
 };
 
@@ -335,7 +361,8 @@ let state = {
   lang: localStorage.getItem(LS.lang) || (navigator.language.startsWith('ja') ? 'ja' : 'en'),
   wake: localStorage.getItem(LS.wake) === 'true',
   silence: localStorage.getItem(LS.silence) !== 'false',  // 既定 true
-  currentTab: localStorage.getItem(LS.lastTab) || 'meto'
+  currentTab: localStorage.getItem(LS.lastTab) || 'meto',
+  appScale: parseFloat(localStorage.getItem(LS.appScale)) || 1.0
 };
 
 // ===========================
@@ -502,9 +529,15 @@ function autoScaleIframe(ifr) {
     const wrap = ifr.parentElement;
     const realW = wrap.clientWidth;
     const realH = wrap.clientHeight;
-    // タブレット等、横幅がデザイン幅より広い場合は等倍(1.0)上限でセンタリング
-    const scale = Math.min(realW / designW, 1.0);
+    // ユーザー設定スケール。上限は「横幅ぴったり」まで（はみ出し防止）
+    const fitScale = realW / designW;
+    const scale = Math.min(fitScale, state.appScale);
     const offsetX = (realW - designW * scale) / 2;
+    // 余白の背景色を子アプリのbody背景色に合わせて黒帯を消す
+    try {
+      const bg = getComputedStyle(doc.body).backgroundColor;
+      if (bg && bg !== 'rgba(0, 0, 0, 0)') wrap.style.background = bg;
+    } catch(e2) {}
     ifr.style.position = 'absolute';
     ifr.style.left = '0';
     ifr.style.top = '0';
@@ -579,6 +612,13 @@ document.getElementById('silenceToggle').addEventListener('change', (e) => {
   localStorage.setItem(LS.silence, state.silence ? 'true' : 'false');
 });
 
+document.getElementById('scaleSlider').addEventListener('input', (e) => {
+  state.appScale = parseInt(e.target.value) / 100;
+  localStorage.setItem(LS.appScale, state.appScale);
+  document.getElementById('scaleValue').textContent = `×${state.appScale.toFixed(1)}`;
+  rescaleAllIframes();
+});
+
 // ===========================
 // 初期化
 // ===========================
@@ -587,6 +627,9 @@ function init() {
   document.getElementById('wakeLockToggle').checked = state.wake;
   document.getElementById('wakeLockEmoji').textContent = state.wake ? '🥺' : '😴';
   document.getElementById('silenceToggle').checked = state.silence;
+  const slider = document.getElementById('scaleSlider');
+  slider.value = Math.round(state.appScale * 100);
+  document.getElementById('scaleValue').textContent = `×${state.appScale.toFixed(1)}`;
   attachIframeLoadHooks();
   switchTab(state.currentTab);
   if (state.wake) applyParentWakeLock(true);
