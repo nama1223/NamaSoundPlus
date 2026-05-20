@@ -144,9 +144,44 @@
   }
   .seg button.on { background: var(--accent); color: #000; font-weight: bold; }
 
+  .app-links-title {
+    font-size: 0.8rem; font-weight: bold; opacity: 0.7;
+    margin: 4px 0 8px; padding-left: 2px;
+  }
+  .app-link-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px;
+    background: #1c1c1c;
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .app-link-row a {
+    color: var(--accent); text-decoration: none; font-weight: bold; font-size: 0.9rem;
+  }
+  .copy-btn {
+    background: #333; color: #fff; border: none; border-radius: 6px;
+    padding: 5px 10px; font-size: 0.75rem; cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .copy-btn.copied { background: var(--accent); color: #000; }
+
   .footer-note {
     font-size: 0.7rem; opacity: 0.5; margin-top: 16px; text-align: center;
   }
+  .wishlist-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 28px; padding: 4px 2px;
+  }
+  .wishlist-row a { display: flex; align-items: center; opacity: 0.75; transition: opacity 0.2s; }
+  .wishlist-row a:hover { opacity: 1; }
+  .amazon-badge {
+    display: inline-block; width: 85px; height: 35px;
+    background-image: url('https://m.media-amazon.com/images/G/09/gno/sprites/nav-sprite-global-1x-reorg-privacy._CB546377955_.png');
+    background-position: -5px -85px; background-repeat: no-repeat;
+    background-size: auto; flex-shrink: 0; background-color: #000;
+  }
+  .wishlist-label { font-size: 0.8rem; font-weight: bold; opacity: 0.75; }
 </style>
 </head>
 <body>
@@ -216,7 +251,32 @@
       </label>
     </div>
 
-    <div class="footer-note">NamaSound+ © nama1223</div>
+    <!-- 各アプリへのリンク -->
+    <div style="margin-bottom:4px;">
+      <div class="app-links-title" data-i18n="app_links_title">📱 各アプリを直接開く</div>
+      <div class="app-link-row">
+        <a href="https://nama1223.github.io/NamaMeto/NamaMeto.html" target="_blank" rel="noopener" data-i18n="app_meto">NamaMeto</a>
+        <button class="copy-btn" data-copy-url="https://nama1223.github.io/NamaMeto/NamaMeto.html">URLコピー</button>
+      </div>
+      <div class="app-link-row">
+        <a href="https://nama1223.github.io/Namachu/" target="_blank" rel="noopener" data-i18n="app_chu">NamaChu</a>
+        <button class="copy-btn" data-copy-url="https://nama1223.github.io/Namachu/">URLコピー</button>
+      </div>
+      <div class="app-link-row">
+        <a href="https://nama1223.github.io/NamaHam/" target="_blank" rel="noopener" data-i18n="app_ham">NamaHam</a>
+        <button class="copy-btn" data-copy-url="https://nama1223.github.io/NamaHam/">URLコピー</button>
+      </div>
+    </div>
+
+    <div class="footer-note">NamaSound+ © nama · Developed with Claude</div>
+
+    <!-- Amazon欲しいものリスト -->
+    <div class="wishlist-row">
+      <a href="https://www.amazon.jp/hz/wishlist/ls/21PS61YG1P32B?ref_=wl_share" target="_blank" rel="noreferrer noopener">
+        <span class="amazon-badge"></span>
+      </a>
+      <span class="wishlist-label" data-i18n="wishlist">欲しいものリスト</span>
+    </div>
   </div>
 </div>
 
@@ -239,14 +299,22 @@ const I18N = {
     settings_title: '⚙️ 設定',
     lang_title: '🌐 言語 / Language', lang_desc: '3アプリ一括で切り替え',
     wake_title: 'スリープ防止', wake_desc: '3アプリ一括（画面オン維持）',
-    silence_title: '🔇 切替時に音を止める', silence_desc: 'タブを切り替えたとき再生中の音を停止'
+    silence_title: '🔇 切替時に音を止める', silence_desc: 'タブを切り替えたとき再生中の音を停止',
+    app_links_title: '📱 各アプリを直接開く',
+    app_meto: 'NamaMeto', app_chu: 'NamaChu', app_ham: 'NamaHam',
+    copy: 'URLコピー', copied: 'コピー済み',
+    wishlist: '欲しいものリスト'
   },
   en: {
     meto: 'Metronome', chu: 'Tuner', ham: 'Harmony',
     settings_title: '⚙️ Settings',
     lang_title: '🌐 Language', lang_desc: 'Sync across all 3 apps',
     wake_title: 'Keep Awake', wake_desc: 'Sync across all 3 apps',
-    silence_title: '🔇 Mute on tab switch', silence_desc: 'Stop playback when switching tabs'
+    silence_title: '🔇 Mute on tab switch', silence_desc: 'Stop playback when switching tabs',
+    app_links_title: '📱 Open each app directly',
+    app_meto: 'NamaMetro', app_chu: 'NamaTune', app_ham: 'NamaHarmony',
+    copy: 'Copy URL', copied: 'Copied!',
+    wishlist: 'Wish List'
   }
 };
 
@@ -266,12 +334,43 @@ function applyI18n() {
     const key = el.getAttribute('data-i18n');
     if (t[key]) el.textContent = t[key];
   });
+  // コピーボタン（copied状態でない時だけ更新）
+  document.querySelectorAll('.copy-btn:not(.copied)').forEach(b => {
+    b.textContent = t.copy;
+  });
   document.documentElement.lang = state.lang;
   // セグメント表示
   document.querySelectorAll('#segLang button').forEach(b => {
     b.classList.toggle('on', b.dataset.lang === state.lang);
   });
 }
+
+// URLコピー
+document.getElementById('settingsPanel').addEventListener('click', (e) => {
+  const btn = e.target.closest('.copy-btn');
+  if (!btn || btn.classList.contains('copied')) return;
+  const url = btn.dataset.copyUrl;
+  if (!url) return;
+  const t = I18N[state.lang] || I18N.ja;
+  const doFeedback = () => {
+    btn.textContent = t.copied;
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.textContent = t.copy;
+    }, 1500);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(doFeedback).catch(() => {});
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    doFeedback();
+  }
+});
 
 // ===========================
 // タブ切替
