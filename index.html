@@ -283,6 +283,15 @@
       <button id="forceReloadBtn" style="background:#c0392b; color:#fff; border:none; border-radius:8px; padding:7px 14px; font-size:0.85rem; font-weight:bold; cursor:pointer;" data-i18n="reload_btn">リロード</button>
     </div>
 
+    <!-- PWAインストール -->
+    <div class="setting-row">
+      <div class="label">
+        <div class="title" data-i18n="install_title">📲 アプリとしてインストール</div>
+        <div class="desc" data-i18n="install_desc">ホーム画面に追加してアプリのように起動</div>
+      </div>
+      <button id="installBtn" style="background:var(--accent); color:#000; border:none; border-radius:8px; padding:7px 14px; font-size:0.85rem; font-weight:bold; cursor:pointer;" data-i18n="install_btn">インストール</button>
+    </div>
+
     <!-- 各アプリへのリンク -->
     <div style="margin-bottom:4px;">
       <div class="app-links-title" data-i18n="app_links_title">📱 各アプリを直接開く</div>
@@ -309,6 +318,15 @@
       </a>
       <span class="wishlist-label" data-i18n="wishlist">欲しいものリスト</span>
     </div>
+  </div>
+</div>
+
+<!-- PWAインストール案内モーダル -->
+<div id="installModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#1c1c1c; color:#fff; border-radius:16px; padding:24px; max-width:380px; width:100%; box-shadow:0 8px 40px rgba(0,0,0,0.4);">
+    <h2 id="installModalTitle" style="font-size:1.05rem; margin:0 0 12px;"></h2>
+    <div id="installModalBody" style="font-size:0.85rem; line-height:1.8; color:#ccc;"></div>
+    <button id="installModalClose" style="margin-top:18px; width:100%; padding:11px; border:none; border-radius:8px; background:var(--accent); color:#000; font-size:0.9rem; font-weight:bold; cursor:pointer;" data-i18n="install_modal_close">閉じる</button>
   </div>
 </div>
 
@@ -339,7 +357,14 @@ const I18N = {
     wishlist: '欲しいものリスト',
     reload_title: '🔄 強制リロード', reload_desc: 'キャッシュを消去してアプリを最新化',
     reload_btn: 'リロード', reloading_btn: '処理中...',
-    scale_title: '📐 表示サイズ', scale_desc: '固定幅アプリ（メトロノーム・チューナー）のみ'
+    scale_title: '📐 表示サイズ', scale_desc: '固定幅アプリ（メトロノーム・チューナー）のみ',
+    install_title: '📲 アプリとしてインストール', install_desc: 'ホーム画面に追加してアプリのように起動',
+    install_btn: 'インストール', install_modal_close: '閉じる',
+    install_done_title: 'インストール済み', install_done_body: 'このアプリはすでにインストールされています。',
+    install_ios_title: 'iOSへのインストール方法',
+    install_ios_body: '<p>Safariでこのページを開いてください。</p><ol><li>画面下部の<strong>共有ボタン（□↑）</strong>をタップ</li><li>「<strong>ホーム画面に追加</strong>」を選択</li><li>右上の「<strong>追加</strong>」をタップ</li></ol><p style="margin-top:8px;font-size:0.75rem;color:#888">※ Chrome・Firefoxでは対応していません。</p>',
+    install_other_title: 'インストール方法',
+    install_other_body: '<ol><li><strong>Chrome：</strong>アドレスバー右端の「⊕」または「⋮」→「アプリをインストール」</li><li><strong>Edge：</strong>「…」→「アプリ」→「このサイトをアプリとしてインストール」</li><li><strong>Safari（Mac）：</strong>メニュー File →「Dockに追加」</li></ol><p style="margin-top:8px;font-size:0.75rem;color:#888">Firefox は PWA インストールに対応していません。</p>'
   },
   en: {
     meto: 'Metronome', chu: 'Tuner', ham: 'Harmony',
@@ -353,7 +378,14 @@ const I18N = {
     wishlist: 'Wish List',
     reload_title: '🔄 Force Reload', reload_desc: 'Clear cache and update to latest',
     reload_btn: 'Reload', reloading_btn: 'Working...',
-    scale_title: '📐 Display Size', scale_desc: 'Fixed-width apps (Metronome & Tuner) only'
+    scale_title: '📐 Display Size', scale_desc: 'Fixed-width apps (Metronome & Tuner) only',
+    install_title: '📲 Install App', install_desc: 'Add to home screen and launch like an app',
+    install_btn: 'Install', install_modal_close: 'Close',
+    install_done_title: 'Already Installed', install_done_body: 'This app is already installed.',
+    install_ios_title: 'How to Install on iOS',
+    install_ios_body: '<p>Open this page in Safari.</p><ol><li>Tap the <strong>Share button (□↑)</strong> at the bottom of the screen</li><li>Select "<strong>Add to Home Screen</strong>"</li><li>Tap "<strong>Add</strong>" at the top right</li></ol><p style="margin-top:8px;font-size:0.75rem;color:#888">Not supported in Chrome or Firefox.</p>',
+    install_other_title: 'How to Install',
+    install_other_body: '<ol><li><strong>Chrome:</strong> Click "⊕" or "⋮" at the right of the address bar → "Install app"</li><li><strong>Edge:</strong> "…" → "Apps" → "Install this site as an app"</li><li><strong>Safari (Mac):</strong> File menu → "Add to Dock"</li></ol><p style="margin-top:8px;font-size:0.75rem;color:#888">Firefox does not support PWA installation.</p>'
   }
 };
 
@@ -402,6 +434,53 @@ document.getElementById('forceReloadBtn').addEventListener('click', async () => 
     }
   } catch(e) {}
   location.reload();
+});
+
+// ===========================
+// PWAインストールボタン
+// ===========================
+let deferredInstallPrompt = null;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios/i.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                     || ('standalone' in navigator && navigator.standalone === true);
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+});
+window.addEventListener('appinstalled', () => { deferredInstallPrompt = null; });
+
+function showInstallModal(titleKey, bodyKey) {
+  const t = I18N[state.lang] || I18N.ja;
+  document.getElementById('installModalTitle').textContent = t[titleKey];
+  document.getElementById('installModalBody').innerHTML = t[bodyKey];
+  document.getElementById('installModal').style.display = 'flex';
+}
+document.getElementById('installModalClose').addEventListener('click', () => {
+  document.getElementById('installModal').style.display = 'none';
+});
+document.getElementById('installModal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('installModal')) {
+    document.getElementById('installModal').style.display = 'none';
+  }
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (isStandalone) {
+    showInstallModal('install_done_title', 'install_done_body');
+    return;
+  }
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    if (outcome === 'accepted') deferredInstallPrompt = null;
+    return;
+  }
+  if (isIOS) {
+    showInstallModal('install_ios_title', 'install_ios_body');
+    return;
+  }
+  showInstallModal('install_other_title', 'install_other_body');
 });
 
 // URLコピー
