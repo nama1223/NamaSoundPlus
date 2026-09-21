@@ -182,8 +182,21 @@
 
   .wishlist-row {
     display: flex; align-items: center; gap: 10px;
-    margin-top: 52px; padding: 4px 2px;
+    margin-top: 16px; padding: 4px 2px;
   }
+  .distributor-note {
+    margin-top: 36px;
+    padding: 12px 14px;
+    background: #1c1c1c;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    line-height: 1.8;
+    color: #ccc;
+    text-align: center;
+  }
+  .distributor-note .site-name { font-weight: bold; color: #fff; }
+  .distributor-note a { color: var(--accent); word-break: break-all; }
+  .distributor-note .fallback-label { opacity: 0.6; font-size: 0.9em; margin-top: 4px; }
   .wishlist-row a { display: flex; align-items: center; opacity: 0.75; transition: opacity 0.2s; }
   .wishlist-row a:hover { opacity: 1; }
   .amazon-badge {
@@ -193,6 +206,44 @@
     background-size: auto; flex-shrink: 0; background-color: #000;
   }
   .wishlist-label { font-size: 0.8rem; font-weight: bold; opacity: 0.75; }
+
+  /* 初回起動ガイド */
+  .onboard-bubble {
+    position: absolute;
+    max-width: 300px;
+    background: #fff;
+    color: #111;
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    font-size: 0.85rem;
+    line-height: 1.7;
+  }
+  .onboard-bubble p { margin: 0 0 6px; white-space: pre-line; }
+  .onboard-bubble p:last-child { margin-bottom: 0; }
+  .onboard-arrow {
+    position: absolute;
+    width: 0; height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+  }
+  .onboard-arrow-up {
+    top: -9px;
+    border-bottom: 10px solid #fff;
+  }
+  #onboardCloseBtn {
+    position: absolute;
+    left: 50%; bottom: max(28px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 24px;
+    padding: 12px 28px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -206,21 +257,24 @@
 
 <div id="frames">
   <!-- 各子アプリ。loading="lazy" でタブ切替まで読み込まない -->
+  <!-- src は付けず data-path（ドメインより後ろの部分）のみ持たせ、
+       実際の読み込み元URLは起動中のドメイン(nama1223.com / nama1223.github.io)に
+       合わせて JS 側で組み立てる（buildChildUrl 参照） -->
   <div class="frame-wrap active" data-frame="meto">
     <iframe class="app-frame" data-app="meto"
-      src="https://nama1223.com/NamaMeto/NamaMeto.html"
+      data-path="/NamaMeto/NamaMeto.html"
       allow="microphone; autoplay; clipboard-read; clipboard-write"
       allowfullscreen></iframe>
   </div>
   <div class="frame-wrap" data-frame="chu">
     <iframe class="app-frame" data-app="chu"
-      data-src="https://nama1223.com/Namachu/"
+      data-path="/Namachu/"
       allow="microphone; autoplay"
       allowfullscreen></iframe>
   </div>
   <div class="frame-wrap" data-frame="ham">
     <iframe class="app-frame" data-app="ham"
-      data-src="https://nama1223.com/NamaHam/"
+      data-path="/NamaHam/"
       allow="microphone; autoplay"
       allowfullscreen></iframe>
   </div>
@@ -293,23 +347,32 @@
     </div>
 
     <!-- 各アプリへのリンク -->
+    <!-- href / data-copy-url は data-path から JS 側で現在のドメインに合わせて組み立てる -->
     <div style="margin-bottom:4px;">
       <div class="app-links-title" data-i18n="app_links_title">📱 各アプリを直接開く</div>
       <div class="app-link-row">
-        <a href="https://nama1223.com/NamaMeto/NamaMeto.html" target="_blank" rel="noopener" data-i18n="app_meto">NamaMeto</a>
-        <button class="copy-btn" data-copy-url="https://nama1223.com/NamaMeto/NamaMeto.html">URLコピー</button>
+        <a data-path="/NamaMeto/NamaMeto.html" target="_blank" rel="noopener" data-i18n="app_meto">NamaMeto</a>
+        <button class="copy-btn" data-path="/NamaMeto/NamaMeto.html">URLコピー</button>
       </div>
       <div class="app-link-row">
-        <a href="https://nama1223.com/Namachu/" target="_blank" rel="noopener" data-i18n="app_chu">NamaChu</a>
-        <button class="copy-btn" data-copy-url="https://nama1223.com/Namachu/">URLコピー</button>
+        <a data-path="/Namachu/" target="_blank" rel="noopener" data-i18n="app_chu">NamaChu</a>
+        <button class="copy-btn" data-path="/Namachu/">URLコピー</button>
       </div>
       <div class="app-link-row">
-        <a href="https://nama1223.com/NamaHam/" target="_blank" rel="noopener" data-i18n="app_ham">NamaHam</a>
-        <button class="copy-btn" data-copy-url="https://nama1223.com/NamaHam/">URLコピー</button>
+        <a data-path="/NamaHam/" target="_blank" rel="noopener" data-i18n="app_ham">NamaHam</a>
+        <button class="copy-btn" data-path="/NamaHam/">URLコピー</button>
       </div>
     </div>
 
     <div class="footer-note">NamaSound+ © nama · Developed with Claude</div>
+
+    <!-- 配布元サイト案内（ドメイン消滅時の避難先を明示） -->
+    <div class="distributor-note">
+      <div class="site-name" data-i18n="distributor_label">配布元サイト：Nama Studio(ナマスタ)</div>
+      <div><a href="https://nama1223.com" target="_blank" rel="noopener">https://nama1223.com</a></div>
+      <div class="fallback-label" data-i18n="distributor_fallback_label">（上記ドメインが消滅した場合はこちら）</div>
+      <div><a href="http://nama1223.github.io/" target="_blank" rel="noopener">http://nama1223.github.io/</a></div>
+    </div>
 
     <!-- Amazon欲しいものリスト -->
     <div class="wishlist-row">
@@ -319,6 +382,23 @@
       <span class="wishlist-label" data-i18n="wishlist">欲しいものリスト</span>
     </div>
   </div>
+</div>
+
+<!-- 初回起動ガイド（オーバーレイ＋フキダシ） -->
+<div id="onboardOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:10000; padding:20px;">
+  <!-- タブ切替フキダシ：タブバーの下あたりを指す -->
+  <div id="onboardBubbleTabs" class="onboard-bubble" style="top: calc(env(safe-area-inset-top) + var(--tabbar-h) + 14px); left: 50%; transform: translateX(-50%);">
+    <div class="onboard-arrow onboard-arrow-up"></div>
+    <p data-i18n="onboard_tabs"></p>
+  </div>
+  <!-- インストール案内フキダシ：⚙ボタンの下あたりを指す -->
+  <div id="onboardBubbleInstall" class="onboard-bubble" style="top: calc(env(safe-area-inset-top) + var(--tabbar-h) + 100px); left: 14px;">
+    <div class="onboard-arrow onboard-arrow-up" style="left:22px;"></div>
+    <p data-i18n="onboard_install_head" style="font-weight:bold;"></p>
+    <p data-i18n="onboard_install_body"></p>
+    <p data-i18n="onboard_install_note" style="opacity:0.8; font-size:0.8em; margin-top:8px;"></p>
+  </div>
+  <button id="onboardCloseBtn" data-i18n="onboard_close">はじめる</button>
 </div>
 
 <!-- PWAインストール案内モーダル -->
@@ -339,10 +419,38 @@ const LS = {
   wake: 'nsp_wakelock',
   silence: 'nsp_silence_on_switch',
   lastTab: 'nsp_last_tab',
-  appScale: 'nsp_app_scale'
+  appScale: 'nsp_app_scale',
+  onboarded: 'nsp_onboarded_v1'
 };
 
-const CHILD_ORIGIN = 'https://nama1223.com';
+// ===========================
+// ドメイン対応（nama1223.com / nama1223.github.io の両対応）
+// ===========================
+// 実データは github.io の1箇所のみで、nama1223.com はそこへの別名（CNAME、
+// 将来的にはCloudflare Workerでの転送）に過ぎない。そのため子アプリも
+// 「今このページが開かれているのと同じドメイン」から読み込む方針にする。
+// これによりドメインをまたいだ postMessage（オリジン不一致でのブロック）が
+// 発生せず、nama1223.com / nama1223.github.io のどちらで開いても動作する。
+const SUPPORTED_CHILD_HOSTS = [
+  'https://nama1223.com',
+  'https://nama1223.github.io',
+  'http://nama1223.github.io'  // 依頼文中のURL表記(http)にも念のため対応
+];
+
+// 現在このページが動いているオリジン。想定外のドメイン（ローカル確認用サーバー等）で
+// 開かれた場合のフォールバックとして、既定値は nama1223.com にしておく。
+const CHILD_ORIGIN = SUPPORTED_CHILD_HOSTS.includes(location.origin)
+  ? location.origin
+  : 'https://nama1223.com';
+
+// data-path（ドメインより後ろの部分）から、現在のドメインに応じた完全なURLを組み立てる
+function buildChildUrl(path) {
+  return CHILD_ORIGIN + path;
+}
+
+// 子アプリへ「NamaSound+経由で開いている」ことを伝えるための識別子。
+// 子アプリ側はこの値を postMessage で受け取り、単独起動かNamaSound+経由かを判別する。
+const HOST_CONTEXT = { type: 'setHostContext', host: 'namasoundplus', version: 1 };
 
 const I18N = {
   ja: {
@@ -355,6 +463,8 @@ const I18N = {
     app_meto: 'NamaMeto', app_chu: 'NamaChu', app_ham: 'NamaHam',
     copy: 'URLコピー', copied: 'コピー済み',
     wishlist: '欲しいものリスト',
+    distributor_label: '配布元サイト：Nama Studio(ナマスタ)',
+    distributor_fallback_label: '（上記ドメインが消滅した場合はこちら）',
     reload_title: '🔄 強制リロード', reload_desc: 'キャッシュを消去してアプリを最新化',
     reload_btn: 'リロード', reloading_btn: '処理中...',
     scale_title: '📐 表示サイズ', scale_desc: '固定幅アプリ（メトロノーム・チューナー）のみ',
@@ -364,7 +474,12 @@ const I18N = {
     install_ios_title: 'iOSへのインストール方法',
     install_ios_body: '<p>Safariでこのページを開いてください。</p><ol><li>画面下部の<strong>共有ボタン（□↑）</strong>をタップ</li><li>「<strong>ホーム画面に追加</strong>」を選択</li><li>右上の「<strong>追加</strong>」をタップ</li></ol><p style="margin-top:8px;font-size:0.75rem;color:#888">※ Chrome・Firefoxでは対応していません。</p>',
     install_other_title: 'インストール方法',
-    install_other_body: '<ol><li><strong>Chrome：</strong>アドレスバー右端の「⊕」または「⋮」→「アプリをインストール」</li><li><strong>Edge：</strong>「…」→「アプリ」→「このサイトをアプリとしてインストール」</li><li><strong>Safari（Mac）：</strong>メニュー File →「Dockに追加」</li></ol><p style="margin-top:8px;font-size:0.75rem;color:#888">Firefox は PWA インストールに対応していません。</p>'
+    install_other_body: '<ol><li><strong>Chrome：</strong>アドレスバー右端の「⊕」または「⋮」→「アプリをインストール」</li><li><strong>Edge：</strong>「…」→「アプリ」→「このサイトをアプリとしてインストール」</li><li><strong>Safari（Mac）：</strong>メニュー File →「Dockに追加」</li></ol><p style="margin-top:8px;font-size:0.75rem;color:#888">Firefox は PWA インストールに対応していません。</p>',
+    onboard_tabs: '上にあるタブで各アプリを切り替えます。',
+    onboard_install_head: '■インストールについて■',
+    onboard_install_body: '統合アプリNamaSound+をインストールするには、左上の⚙マークの中にあるインストールボタンを押してください。',
+    onboard_install_note: '各アプリの設定画面にインストールボタンがありますが、そちらは個別にインストールするボタンです。\nそちらでは一つのアプリのみインストールされます。',
+    onboard_close: 'はじめる'
   },
   en: {
     meto: 'Metronome', chu: 'Tuner', ham: 'Harmony',
@@ -376,6 +491,8 @@ const I18N = {
     app_meto: 'NamaMetro', app_chu: 'NamaTune', app_ham: 'NamaHarmony',
     copy: 'Copy URL', copied: 'Copied!',
     wishlist: 'Wish List',
+    distributor_label: 'Distributed by: Nama Studio',
+    distributor_fallback_label: '(If the domain above is unavailable, use this instead)',
     reload_title: '🔄 Force Reload', reload_desc: 'Clear cache and update to latest',
     reload_btn: 'Reload', reloading_btn: 'Working...',
     scale_title: '📐 Display Size', scale_desc: 'Fixed-width apps (Metronome & Tuner) only',
@@ -385,7 +502,12 @@ const I18N = {
     install_ios_title: 'How to Install on iOS',
     install_ios_body: '<p>Open this page in Safari.</p><ol><li>Tap the <strong>Share button (□↑)</strong> at the bottom of the screen</li><li>Select "<strong>Add to Home Screen</strong>"</li><li>Tap "<strong>Add</strong>" at the top right</li></ol><p style="margin-top:8px;font-size:0.75rem;color:#888">Not supported in Chrome or Firefox.</p>',
     install_other_title: 'How to Install',
-    install_other_body: '<ol><li><strong>Chrome:</strong> Click "⊕" or "⋮" at the right of the address bar → "Install app"</li><li><strong>Edge:</strong> "…" → "Apps" → "Install this site as an app"</li><li><strong>Safari (Mac):</strong> File menu → "Add to Dock"</li></ol><p style="margin-top:8px;font-size:0.75rem;color:#888">Firefox does not support PWA installation.</p>'
+    install_other_body: '<ol><li><strong>Chrome:</strong> Click "⊕" or "⋮" at the right of the address bar → "Install app"</li><li><strong>Edge:</strong> "…" → "Apps" → "Install this site as an app"</li><li><strong>Safari (Mac):</strong> File menu → "Add to Dock"</li></ol><p style="margin-top:8px;font-size:0.75rem;color:#888">Firefox does not support PWA installation.</p>',
+    onboard_tabs: 'Use the tabs at the top to switch between apps.',
+    onboard_install_head: '■ About Installing ■',
+    onboard_install_body: 'To install the NamaSound+ combined app, tap the ⚙ icon in the top-left and use the Install button inside it.',
+    onboard_install_note: 'Each individual app\'s settings screen also has an Install button, but that one installs only that single app.',
+    onboard_close: 'Get Started'
   }
 };
 
@@ -487,7 +609,7 @@ document.getElementById('installBtn').addEventListener('click', async () => {
 document.getElementById('settingsPanel').addEventListener('click', (e) => {
   const btn = e.target.closest('.copy-btn');
   if (!btn || btn.classList.contains('copied')) return;
-  const url = btn.dataset.copyUrl;
+  const url = btn.dataset.path ? buildChildUrl(btn.dataset.path) : null;
   if (!url) return;
   const t = I18N[state.lang] || I18N.ja;
   const doFeedback = () => {
@@ -526,11 +648,11 @@ function switchTab(tab) {
   });
 
   if (tab !== 'settings') {
-    // 遅延ロード（data-src を src へ）
+    // 遅延ロード（data-path から、現在のドメインに応じたURLを組み立てて src へ）
     const wrap = document.querySelector(`.frame-wrap[data-frame="${tab}"]`);
     if (wrap) {
       const ifr = wrap.querySelector('iframe');
-      if (ifr && !ifr.src && ifr.dataset.src) ifr.src = ifr.dataset.src;
+      if (ifr && !ifr.src && ifr.dataset.path) ifr.src = buildChildUrl(ifr.dataset.path);
       // タブ表示後にサイズ確定するため再スケール
       if (ifr && ifr.src) requestAnimationFrame(() => autoScaleIframe(ifr));
     }
@@ -573,6 +695,7 @@ window.addEventListener('message', (event) => {
     const ifr = [...document.querySelectorAll('iframe.app-frame')]
       .find(i => i.contentWindow === event.source);
     if (ifr) {
+      postToFrame(ifr, HOST_CONTEXT);
       postToFrame(ifr, { type: 'setLanguage', lang: state.lang });
       postToFrame(ifr, { type: 'setWakeLock', enabled: state.wake });
     }
@@ -583,6 +706,7 @@ window.addEventListener('message', (event) => {
 function attachIframeLoadHooks() {
   document.querySelectorAll('iframe.app-frame').forEach(ifr => {
     ifr.addEventListener('load', () => {
+      postToFrame(ifr, HOST_CONTEXT);
       postToFrame(ifr, { type: 'setLanguage', lang: state.lang });
       postToFrame(ifr, { type: 'setWakeLock', enabled: state.wake });
       autoScaleIframe(ifr);
@@ -796,10 +920,26 @@ document.getElementById('scaleSlider').addEventListener('input', (e) => {
 });
 
 // ===========================
+// 初回起動ガイド
+// ===========================
+function showOnboarding() {
+  document.getElementById('onboardOverlay').style.display = 'block';
+}
+function closeOnboarding() {
+  document.getElementById('onboardOverlay').style.display = 'none';
+  localStorage.setItem(LS.onboarded, 'true');
+}
+document.getElementById('onboardCloseBtn').addEventListener('click', closeOnboarding);
+
+// ===========================
 // 初期化
 // ===========================
 function init() {
   applyI18n();
+  // 「各アプリを直接開く」リンクを、現在のドメインに応じたURLで確定させる
+  document.querySelectorAll('.app-link-row a[data-path]').forEach(a => {
+    a.href = buildChildUrl(a.dataset.path);
+  });
   document.getElementById('wakeLockToggle').checked = state.wake;
   document.getElementById('wakeLockEmoji').textContent = state.wake ? '🥺' : '😴';
   document.getElementById('silenceToggle').checked = state.silence;
@@ -814,6 +954,19 @@ function init() {
   });
   switchTab(state.currentTab);
   if (state.wake) applyParentWakeLock(true);
+
+  // 初回起動時のみ案内オーバーレイを表示
+  // ただし、インストール済みPWAとして起動している場合は、初回であっても
+  // 「インストール方法の案内」自体が不要（すでにインストール済みのため）なので省略する。
+  // isStandalone は PWAインストールボタンの判定と同じ変数を流用している。
+  // （判定できない環境では isStandalone は false のままなので、通常通り案内を表示する）
+  if (localStorage.getItem(LS.onboarded) !== 'true' && !isStandalone) {
+    showOnboarding();
+  } else if (localStorage.getItem(LS.onboarded) !== 'true' && isStandalone) {
+    // 案内は見せないが、「見た扱い」にはしておく（後で通常ブラウザで開いた時に
+    // 再度表示されるのを防ぐ）
+    localStorage.setItem(LS.onboarded, 'true');
+  }
 
   // Service Worker 登録
   if ('serviceWorker' in navigator) {
