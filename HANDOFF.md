@@ -50,7 +50,7 @@ git push
 | 識別子 | アプリ名（日本語 / English） | URL |
 |---|---|---|
 | `meto` | NamaMeto / NamaMetro | https://nama1223.github.io/NamaMeto/NamaMeto.html |
-| `chu` | NamaChu / NamaTune | https://nama1223.github.io/Namachu/ |
+| `chu` | NamaChu / NamaTune | https://nama1223.github.io/NamaChu/ |
 | `ham` | NamaHam / NamaHarmony | https://nama1223.github.io/NamaHam/ |
 
 - すべて **同一オリジン**（`nama1223.github.io`）のため、postMessage・contentDocument・getComputedStyle を制限なく使用可能

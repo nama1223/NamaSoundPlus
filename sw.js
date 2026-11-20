@@ -2,7 +2,7 @@
 // 自分のシェル（index.html / manifest / アイコン）だけを管理する。
 // 各子アプリ（NamaMeto / NamaChu / NamaHam）はそれぞれのSWで自前管理されるため、ここでは関与しない。
 
-const CACHE_NAME = 'namasoundplus-cache-auto';
+const CACHE_NAME = 'namasoundplus-cache-v2'; // 2026-11-20 改名対応でバンプ（旧キャッシュを破棄させる）
 
 // index.html は pre-cache しない。
 // install 時に CDN キャッシュ遅延で古い版を焼き付けるリスクを避けるため。
